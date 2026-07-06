@@ -49,7 +49,11 @@
       if (!scanning) return;
       scanning = false;
       html5QrCode.pause();
-
+    if (!/^SK-[A-Z2-9]{6}$/.test(decodedText.trim())) {
+      alert("Invalid QR Code");
+      restartScanner();
+      return;
+      }
       const div = document.getElementById("result");
       div.innerHTML = `<p id="loadingMsg">Looking up entry code...</p>`;
 
