@@ -33,7 +33,10 @@
   <h2>🙏 Sri Srinivasa Kalyanam</h2>
   <p>Entry Pass Scanner</p>
   <div id="reader"></div>
-  <div id="result"></div>
+
+<button onclick="showStats()">📊 Event Statistics</button>
+
+<div id="result"></div>
 
   <script>
     // ============ IMPORTANT ============
@@ -153,7 +156,51 @@
       );
       scanning = true;
     }
+    async function showStats() {
 
+  const div = document.getElementById("result");
+
+  div.innerHTML = "<p id='loadingMsg'>Loading statistics...</p>";
+
+  try {
+
+    const res = await fetch(SCRIPT_URL + "?action=stats");
+
+    const stats = await res.json();
+
+    div.innerHTML = `
+      <div class="card success">
+        <h3>📊 Event Statistics</h3>
+
+        <div class="label">Total Registered Families</div>
+        <div class="value">${stats.totalFamilies}</div>
+
+        <div class="label">Total Registered Members</div>
+        <div class="value">${stats.totalMembers}</div>
+
+        <div class="label">Families Checked In</div>
+        <div class="value">${stats.checkedInFamilies}</div>
+
+        <div class="label">Members Attended</div>
+        <div class="value">${stats.attendedMembers}</div>
+
+        <button onclick="restartScanner()">Close</button>
+
+      </div>
+    `;
+
+  } catch(err) {
+
+    div.innerHTML = `
+      <div class="card notfound">
+      <div id="status">Unable to load statistics.</div>
+      <button onclick="restartScanner()">Back</button>
+      </div>
+    `;
+
+  }
+
+}
     function restartScanner() {
       document.getElementById("result").innerHTML = "";
       scanning = true;
