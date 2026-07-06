@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sri Srinivasa Kalyanam - Entry Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background:#faf7f2; margin:0; padding:16px; text-align:center; }
+    h2 { color:#b0006e; margin-bottom:4px; }
+    #reader { width:100%; max-width:400px; margin:16px auto; border-radius:12px; overflow:hidden; }
+    .card {
+      max-width:400px; margin:16px auto; padding:20px; border-radius:12px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.15); text-align:left;
+    }
+    .success { background:#e6f9ec; border:2px solid #2e9e4f; }
+    .already { background:#fff8e1; border:2px solid #d9a900; }
+    .notfound { background:#fdeaea; border:2px solid #c0392b; }
+    .confirmed { background:#e6f9ec; border:2px solid #2e9e4f; }
+    .label { font-weight:bold; color:#555; }
+    .value { font-size:18px; margin-bottom:8px; }
+    #status { font-size:20px; font-weight:bold; margin-bottom:8px; }
+    button { padding:12px 20px; border:none; border-radius:8px; background:#b0006e; color:white; font-size:16px; cursor:pointer; margin-top:6px; }
+    button.secondary { background:#777; }
+    input#actualCount {
+      width:80px; padding:8px; font-size:16px; border-radius:6px; border:1px solid #ccc; text-align:center;
+    }
+    .count-row { display:flex; align-items:center; gap:10px; margin:10px 0; }
+    #loadingMsg { color:#888; font-size:14px; }
+  </style>
+</head>
+<body>
+  <h2>🙏 Sri Srinivasa Kalyanam</h2>
+  <p>Entry Pass Scanner</p>
+  <div id="reader"></div>
+  <div id="result"></div>
+
+  <script>
+    // ============ IMPORTANT ============
+    // Paste your deployed Apps Script Web App URL here (ends in /exec).
+    // Deploy -> New deployment -> Web app -> Execute as: Me -> Who has access: Anyone
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwMvTfJZOJP1rPaenAawJsKQAZi1-i-UnF510z-geyAA_lg0om-YfcoyKebjQ11ifF6mw/exec";
+    // ====================================
+
+    let html5QrCode;
+    let scanning = false;
+
+    async function onScanSuccess(decodedText) {
+      if (!scanning) return;
+      scanning = false;
+      html5QrCode.pause();
+
+      const div = document.getElementById("result");
+      div.innerHTML = `<p id="loadingMsg">Looking up entry code...</p>`;
+
+      try {
+        const res = await fetch(SCRIPT_URL + "?action=lookup&code=" + encodeURIComponent(decodedText));
+        const data = await res.json();
+        showLookupResult(data, decodedText);
+      } catch (err) {
+        div.innerHTML = `<div class="card notfound">
+          <div id="status" style="color:#c0392b;">⚠️ Connection Error</div>
+          <p>Could not reach the server. Check your internet connection and try again.</p>
+          <button onclick="restartScanner()">Try Again</button>
+        </div>`;
+      }
+    }
+
+    function showLookupResult(res, rawCode) {
+      const div = document.getElementById("result");
+      if (!res.found) {
+        div.innerHTML = `<div class="card notfound">
+          <div id="status" style="color:#c0392b;">❌ Not Found</div>
+          <p>This code does not match any registration.</p>
+          <button onclick="restartScanner()">Scan Next</button>
+        </div>`;
+        return;
+      }
+      const m = res.member;
+      const cls = m.alreadyCheckedIn ? "already" : "success";
+      const statusText = m.alreadyCheckedIn ? "⚠️ Already Checked In (you can update the count below)" : "✅ Match Found";
+
+      div.innerHTML = `<div class="card ${cls}">
+        <div id="status">${statusText}</div>
+        <div class="label">Name</div><div class="value">${m.name}</div>
+        <div class="label">Reg No.</div><div class="value">${m.regNo}</div>
+        <div class="label">Entry Code</div><div class="value">${m.entryCode}</div>
+        <div class="label">Mobile</div><div class="value">${m.mobile}</div>
+        <div class="label">City</div><div class="value">${m.city}</div>
+        <div class="label">Family Members Declared at Registration</div><div class="value">${m.familyCount}</div>
+        <div class="label">Actual Members Attending Today</div>
+        <div class="count-row">
+          <button class="secondary" onclick="stepCount(-1)">-</button>
+          <input id="actualCount" type="number" min="0" value="${m.actualCount || m.familyCount}">
+          <button class="secondary" onclick="stepCount(1)">+</button>
+        </div>
+        <button onclick="confirmCheckIn('${m.entryCode}')">✅ Confirm Check-in</button>
+        <button class="secondary" onclick="restartScanner()">Cancel / Scan Next</button>
+      </div>`;
+    }
+
+    function stepCount(delta) {
+      const input = document.getElementById("actualCount");
+      const v = Math.max(0, (parseInt(input.value) || 0) + delta);
+      input.value = v;
+    }
+
+    async function confirmCheckIn(entryCode) {
+      const count = document.getElementById("actualCount").value;
+      const div = document.getElementById("result");
+      div.innerHTML = `<p id="loadingMsg">Saving check-in...</p>`;
+
+      try {
+        const res = await fetch(SCRIPT_URL + "?action=checkin&code=" + encodeURIComponent(entryCode) + "&count=" + encodeURIComponent(count));
+        const data = await res.json();
+        showConfirmed(data);
+      } catch (err) {
+        div.innerHTML = `<div class="card notfound">
+          <div id="status" style="color:#c0392b;">⚠️ Connection Error</div>
+          <p>Check-in was not saved. Check your internet connection and try again.</p>
+          <button onclick="restartScanner()">Back</button>
+        </div>`;
+      }
+    }
+
+    function showConfirmed(res) {
+      const div = document.getElementById("result");
+      if (!res.found) {
+        div.innerHTML = `<div class="card notfound"><div id="status">❌ Error saving check-in</div>
+          <button onclick="restartScanner()">Scan Next</button></div>`;
+        return;
+      }
+      const m = res.member;
+      div.innerHTML = `<div class="card confirmed">
+        <div id="status">✅ Checked In Successfully</div>
+        <div class="label">Name</div><div class="value">${m.name}</div>
+        <div class="label">Reg No.</div><div class="value">${m.regNo}</div>
+        <div class="label">Actual Members Attending</div><div class="value">${m.actualCount}</div>
+        <button onclick="restartScanner()">Scan Next</button>
+      </div>`;
+    }
+
+    function startScanner() {
+      html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        onScanSuccess
+      );
+      scanning = true;
+    }
+
+    function restartScanner() {
+      document.getElementById("result").innerHTML = "";
+      scanning = true;
+      html5QrCode.resume();
+    }
+
+    window.onload = startScanner;
+  </script>
+</body>
+</html>
