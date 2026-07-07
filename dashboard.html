@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body { font-family: Arial, sans-serif; background:#faf7f2; margin:0; padding:16px; }
+    h2 { color:#b0006e; text-align:center; margin-bottom:4px; }
+    .stats { display:flex; justify-content:center; gap:16px; margin:16px 0; flex-wrap:wrap; }
+    .stat-box { background:white; border-radius:10px; padding:14px 20px; box-shadow:0 2px 6px rgba(0,0,0,0.1); text-align:center; min-width:120px; }
+    .stat-box .num { font-size:26px; font-weight:bold; color:#b0006e; }
+    .stat-box .lbl { font-size:13px; color:#555; }
+    input#search { width:100%; max-width:500px; display:block; margin:0 auto 16px; padding:10px; border-radius:8px; border:1px solid #ccc; font-size:15px; }
+    table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; }
+    th, td { padding:10px; text-align:left; border-bottom:1px solid #eee; font-size:14px; }
+    th { background:#b0006e; color:white; }
+    tr.checked-in { background:#e6f9ec; }
+    .badge { padding:3px 8px; border-radius:12px; font-size:12px; font-weight:bold; }
+    .badge.in { background:#2e9e4f; color:white; }
+    .badge.out { background:#d9a900; color:white; }
+    button#refresh { display:block; margin:0 auto 16px; padding:10px 20px; border:none; border-radius:8px; background:#b0006e; color:white; font-size:15px; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <h2>🙏 Sri Srinivasa Kalyanam - Attendance Dashboard</h2>
+  <div class="stats">
+    <div class="stat-box"><div class="num" id="totalReg">0</div><div class="lbl">Total Registered</div></div>
+    <div class="stat-box"><div class="num" id="totalIn">0</div><div class="lbl">Checked In</div></div>
+    <div class="stat-box"><div class="num" id="totalFamily">0</div><div class="lbl">Total People Expected</div></div>
+    <div class="stat-box"><div class="num" id="totalActual">0</div><div class="lbl">Actual People Attended</div></div>
+  </div>
+  <button id="refresh" onclick="loadData()">🔄 Refresh</button>
+  <input id="search" type="text" placeholder="Search by name, mobile, or reg no..." onkeyup="filterTable()">
+  <table>
+    <thead>
+      <tr>
+        <th>Reg No</th><th>Name</th><th>Mobile</th><th>Declared</th><th>Actual</th><th>City</th><th>Status</th><th>Check-in Time</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <script>
+    let allData = [];
+
+    function loadData() {
+      google.script.run.withSuccessHandler(renderData).getAttendanceList();
+    }
+
+    function renderData(list) {
+      allData = list;
+      document.getElementById("totalReg").innerText = list.length;
+      document.getElementById("totalIn").innerText = list.filter(x => x.status === "Checked In").length;
+      document.getElementById("totalFamily").innerText = list.reduce((sum, x) => sum + (parseInt(x.familyCount) || 1), 0);
+      document.getElementById("totalActual").innerText = list.reduce((sum, x) => sum + (parseInt(x.actualCount) || 0), 0);
+      renderTable(list);
+    }
+
+    function renderTable(list) {
+      const body = document.getElementById("tableBody");
+      body.innerHTML = list.map(x => `
+        <tr class="${x.status === 'Checked In' ? 'checked-in' : ''}">
+          <td>${x.regNo}</td>
+          <td>${x.name}</td>
+          <td>${x.mobile}</td>
+          <td>${x.familyCount}</td>
+          <td>${x.actualCount || '-'}</td>
+          <td>${x.city}</td>
+          <td><span class="badge ${x.status === 'Checked In' ? 'in' : 'out'}">${x.status}</span></td>
+          <td>${x.checkinTime}</td>
+        </tr>
+      `).join("");
+    }
+
+    function filterTable() {
+      const q = document.getElementById("search").value.toLowerCase();
+      const filtered = allData.filter(x =>
+        (x.name || "").toLowerCase().includes(q) ||
+        (x.mobile || "").toString().includes(q) ||
+        (x.regNo || "").toLowerCase().includes(q)
+      );
+      renderTable(filtered);
+    }
+
+    window.onload = loadData;
+  </script>
+</body>
+</html>
