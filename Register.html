@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body { font-family: Arial, sans-serif; background:#faf7f2; margin:0; padding:16px; color:#333; }
+    .wrap { max-width:520px; margin:0 auto; }
+    .header { text-align:center; margin-bottom:20px; }
+    .header h1 { color:#b0006e; font-size:22px; margin-bottom:4px; }
+    .header p { font-size:14px; line-height:1.5; color:#b0006e; }
+    .event-box { background:white; border-radius:10px; padding:14px 18px; margin-bottom:20px; box-shadow:0 2px 6px rgba(0,0,0,0.08); font-size:14px; line-height:1.7; }
+    .card { background:white; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+    label { display:block; font-weight:bold; font-size:13px; margin:14px 0 4px; color:#444; }
+    label .req { color:#c0392b; }
+    input, textarea { width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid #ccc; font-size:14px; font-family:inherit; }
+    textarea { resize:vertical; min-height:50px; }
+    button#submitBtn { display:block; width:100%; margin-top:22px; padding:13px; border:none; border-radius:8px; background:#b0006e; color:white; font-size:16px; font-weight:bold; cursor:pointer; }
+    button#submitBtn:disabled { background:#ccc; cursor:not-allowed; }
+    #errorMsg { color:#c0392b; font-size:13px; margin-top:10px; display:none; }
+
+    .success-card { background:white; border-radius:12px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.1); text-align:center; }
+    .success-card h2 { color:#b0006e; }
+    .success-card .details { text-align:left; background:#faf7f2; border-radius:8px; padding:14px 18px; margin:16px 0; font-size:14px; line-height:1.8; }
+    .success-card img { width:220px; height:220px; margin:14px 0; }
+    .success-card a.maps { color:#b0006e; font-weight:bold; }
+    .blessing { color:#b0006e; font-style:italic; margin-top:18px; font-size:13px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div id="formView">
+      <div class="header">
+        <p>With the divine grace of Lord Venkateswara & Goddess Padmavathi
+          PARK INSTITUTIONS INVITE YOU & YOUR FAMILY
+          to the auspicious & grand celebration of</p>
+        <h1>SRI SRINIVASA KALYANAM</h1>
+      </div>
+
+      <div class="event-box">
+        📅 <b>Date:</b> Saturday, 11 July 2026<br>
+        🕚 <b>Time:</b> 11:00 AM<br>
+        📍 <b>Venue:</b> Prema Ravi Auditorium, Karumathampatti
+      </div>
+
+      <div class="card">
+        <h3 style="color:#b0006e;margin-top:0;">Registration Details</h3>
+
+        <label>Full Name <span class="req">*</span></label>
+        <input
+        id="name"
+        type="text"
+        required
+        oninput="this.value=this.value.replace(/[^A-Za-z ]/g,'')">
+
+        <label>Mobile Number <span class="req">*</span></label>
+        <input
+        id="mobile"
+        type="tel"
+        maxlength="10"
+        inputmode="numeric"
+        pattern="[6-9][0-9]{9}"
+        oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"
+        required>
+
+        <label>Email ID <span class="req">*</span></label>
+        <input
+        id="email"
+        type="email"
+        placeholder="example@gmail.com"
+        autocomplete="email"
+        spellcheck="false">
+        <label>Home Address <span class="req">*</span></label>
+        <textarea id="address" required></textarea>
+
+        <label>Working Place / Organization <span class="req">*</span></label>
+        <input
+        id="org"
+        type="text"
+        required
+        oninput="this.value=this.value.replace(/[^A-Za-z0-9 .,&()-]/g,'')">
+
+        <label>Designation (Optional)</label>
+        <input
+        id="designation"
+        type="text"
+        oninput="this.value=this.value.replace(/[^A-Za-z .]/g,'')">
+
+        <label>Number of Family Members Attending <span class="req">*</span></label>
+        <select id="familyCount" required>
+        <option value="">Select</option>
+        <option>1</option>
+        <option>2</option>
+        <option>3</option>
+        <option>4</option>
+        <option>5</option>
+        <option>6</option>
+        <option>7</option>
+        <option>8</option>
+        <option>9</option>
+        <option>10</option>
+        <option>11</option>
+        <option>12</option>
+        <option>13</option>
+        <option>14</option>
+        <option>15</option>
+</select>
+        <label>Names of Family Members (Optional)</label>
+        <textarea
+        id="familyNames"
+        placeholder="Example: Ravi, Lakshmi, Harini"
+        oninput="this.value=this.value.replace(/[^A-Za-z, ]/g,'')">
+        </textarea>
+
+        <label>City / District <span class="req">*</span></label>
+        <input
+        id="city"
+        type="text"
+        required
+        oninput="this.value=this.value.replace(/[^A-Za-z ]/g,'')">
+
+        <label>Any Special Assistance Required? (Optional)</label>
+        <textarea id="specialAssist"></textarea>
+
+        <button id="submitBtn" onclick="submitForm()">Submit Registration</button>
+        <div id="errorMsg"></div>
+      </div>
+    </div>
+
+    <div id="successView" style="display:none;"></div>
+  </div>
+
+  <script>
+    function submitForm() {
+      const req = {
+        name: document.getElementById('name').value.trim(),
+        mobile: document.getElementById('mobile').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        org: document.getElementById('org').value.trim(),
+        designation: document.getElementById('designation').value.trim(),
+        familyCount: document.getElementById('familyCount').value.trim(),
+        familyNames: document.getElementById('familyNames').value.trim(),
+        city: document.getElementById('city').value.trim(),
+        specialAssist: document.getElementById('specialAssist').value.trim()
+      };
+
+      const errBox = document.getElementById('errorMsg');
+      errBox.style.display = 'none';
+
+      if (!req.name || !req.mobile || !req.address || !req.org || !req.familyCount || !req.city) {
+        errBox.innerText = 'Please fill all required fields marked with *.';
+        errBox.style.display = 'block';
+        return;
+      }
+     // Validate Email ID
+      if (req.email !== "") {
+
+          const email = req.email.toLowerCase().trim();
+
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$/;
+
+      if (!emailRegex.test(email)) {
+        errBox.innerText = "Please enter a valid Email ID.";
+        errBox.style.display = "block";
+        return;
+    }
+
+      }
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerText = 'Submitting...';
+
+      google.script.run
+        .withSuccessHandler(showSuccess)
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          btn.innerText = 'Submit Registration';
+          errBox.innerText = 'Something went wrong: ' + err.message;
+          errBox.style.display = 'block';
+        })
+        .registerMember(req);
+    }
+
+    function showSuccess(res) {
+      document.getElementById('formView').style.display = 'none';
+      const el = document.getElementById('successView');
+      el.style.display = 'block';
+      el.innerHTML = `
+        <div class="success-card">
+          <h2>Registration Successful!</h2>
+          <p> Thank you for registering.</p>
+          <p>Dear <b>${res.name}</b>,</p>
+          <p>Your registration for <b>Sri Srinivasa Kalyanam</b> has been successfully received.</p>
+          <div class="details">
+            <b>Registration Details</b><br>
+            Registration No: ${res.regNo}<br>
+            Date: Saturday, 11 July 2026<br>
+            Time: 11:00 AM<br>
+            Venue: Prema Ravi Auditorium, TCE Campus, Karumathampatti<br>
+            Google Maps: <a class="maps" href="https://maps.app.goo.gl/hHtmKYiv4pw1DKvR8?g_st=ic" target="_blank">View on Maps</a>
+          </div>
+          <img src="${res.qrUrl}" alt="Entry Pass QR Code">
+          <p><b>Entry Code:</b> ${res.entryCode}</p>
+          <p> A confirmation message containing your Entry Pass and QR Code will be sent to your registered email ID.</p>
+          <p>Kindly present your Entry Pass/QR Code at the registration counter for a smooth entry.</p>
+          <p>We look forward to welcoming you and your family.</p>
+          <p class="blessing">With the divine blessings of Lord Venkateswara & Goddess Padmavathi<br>— PARK INSTITUTIONS</p>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
